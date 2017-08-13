@@ -1,2 +1,2 @@
 # deneme
-deneme yeri
+Android connection mysql database 

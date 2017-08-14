@@ -1,47 +1,40 @@
 package com.example.ieg.mysqlconnectionapp;
 
+import android.Manifest;
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
 
-    public Button btn;
-    public TextView textView;
-    public Context context = MainActivity.this;
-    public String stringUrl = "http://ibrahimethem.tk/rehber.json";
-    public String jsonStr;
-    private static final String DEBUG_TAG = "HttpExample";
-
-    private String TAG = MainActivity.class.getSimpleName();
-    private ListView lv;
-
-    ArrayList<HashMap<String, String>> contactList;
+    public Button btn,btnlogin;
+    public EditText username,userpass;
+    public String mUrl = "http://ibrahimethem.tk/databaseinsert.php";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,182 +42,109 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         btn = (Button) findViewById(R.id.button);
-        textView = (TextView) findViewById(R.id.textView);
-        lv = (ListView) findViewById(R.id.list);
+        btnlogin = (Button) findViewById(R.id.btnLogin);
 
-        contactList = new ArrayList<>();
+        username = (EditText) findViewById(R.id.etxtUsername);
+        username = (EditText) findViewById(R.id.etxtUserPass);
+
+        btn.setBackgroundColor(Color.GREEN);
+        btn.setText("On");
 
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                // URL bilgisini UI'dan alıyoruz
+                int c = ((ColorDrawable) btn.getBackground()).getColor() == Color.GREEN ? Color.RED : Color.GREEN;
+                String name = btn.getText().equals("On") ? "Off" : "On";
 
-                ConnectivityManager connMgr = (ConnectivityManager)
-                        getSystemService(Context.CONNECTIVITY_SERVICE);
-                NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-                if (networkInfo != null && networkInfo.isConnected()) {
-
-                    new DownloadWebpageTask().execute(stringUrl);
-
-                } else {
-                    textView.setText("No network connection available.");
-                }
-
-                String name = btn.getText().equals("hey") ? "buton" : "hey";
+                btn.setBackgroundColor(c);
                 btn.setText(name);
             }
         });
 
 
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        // Define a listener that responds to location updates
+        LocationListener locationListener = new LocationListener() {
+            public void onLocationChanged(Location location) {
+                // Called when a new location is found by the network location provider.
+                if (((ColorDrawable) btn.getBackground()).getColor() == Color.GREEN) {
+                    String temp = location.getLatitude() + "," + location.getLongitude();
+                    Log.w("msg location:", temp);
+                    new RequestTask().execute(mUrl + "?ID=1&location=" + temp);
+                }
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            public void onProviderEnabled(String provider) {
+            }
+
+            public void onProviderDisabled(String provider) {
+            }
+        };
+
+        // Register the listener with the Location Manager to receive location updates
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+
+
     }
 
-    private class DownloadWebpageTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... urls) {
 
-            // parametreler execute() çagırısından gelir: params[0] URL'nin yeridir.
+    class RequestTask extends AsyncTask<String, String, String> {
+
+        @Override
+        protected String doInBackground(String... uri) {
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpResponse response;
+            String responseString = null;
             try {
-                return downloadUrl(urls[0]);
-            } catch (IOException e) {
-                return "Web sayfası getirilemedi. Belki URL yanlıştır";
-            }
-        }
+                response = httpclient.execute(new HttpGet(uri[0]));
+                StatusLine statusLine = response.getStatusLine();
+                if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    response.getEntity().writeTo(out);
+                    responseString = out.toString();
+                    out.close();
 
-        // onPostExecute AsyncTask'tan dönen cevabı gösterir.
-        @Override
-        protected void onPostExecute(String result) {
-            Log.w("msg", result);
-            jsonStr = result;
-            new GetContacts().execute();
-        }
-    }
+                    responseString = "200";
 
-    // verilen URL bağlantısı HttpURLConnection kullanarak sağlanır
-// web sayfası bağlantısındaki veri InputStream şeklinde gelir
-// InputStream String'e çevirilir.
-    private String downloadUrl(String myurl) throws IOException {
-        InputStream is = null;
-        // Web sayfasından gelen verinin sadece 500 karakterini göstermek için
-        int len = 6000;
+                } else {
 
-        try {
-            URL url = new URL(myurl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setReadTimeout(10000 /* milliseconds */);
-            conn.setConnectTimeout(15000 /* milliseconds */);
-            conn.setRequestMethod("GET");
-            conn.setDoInput(true);
-            // Sorguyu başlatmak
-            conn.connect();
-            int response = conn.getResponseCode();
-            Log.d(DEBUG_TAG, "The response is: " + response);
-            is = conn.getInputStream();
-            // InputStream verisi string'e çeviriliyor
-            String contentAsString = readIt(is, len);
-            return contentAsString;
+                    //Closes the connection.
+                    response.getEntity().getContent().close();
+                    throw new IOException(statusLine.getReasonPhrase());
 
-            // InputStream'i uygulama işi tamamlandığında kaptamayı unutmayın
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
-    }
-
-    // InputStream'i okur ve String'e çevirir
-    public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
-        Reader reader = null;
-        reader = new InputStreamReader(stream, "UTF-8");
-        char[] buffer = new char[len];
-        reader.read(buffer);
-        return new String(buffer);
-    }
-
-    private class GetContacts extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            Toast.makeText(MainActivity.this, "Json Data is downloading", Toast.LENGTH_LONG).show();
-
-        }
-
-        @Override
-        protected Void doInBackground(Void... arg0) {
-
-
-            Log.e(TAG, "Response from url: " + jsonStr);
-            if (jsonStr != null) {
-                try {
-                    JSONObject jsonObj = new JSONObject(jsonStr);
-
-                    // Getting JSON Array node
-                    JSONArray contacts = jsonObj.getJSONArray("contacts");
-
-                    // looping through All Contacts
-                    for (int i = 0; i < contacts.length(); i++) {
-                        JSONObject c = contacts.getJSONObject(i);
-                        String id = c.getString("id");
-                        String name = c.getString("name");
-                        String email = c.getString("email");
-                        String address = c.getString("address");
-                        String gender = c.getString("gender");
-
-                        // Phone node is JSON Object
-                        JSONObject phone = c.getJSONObject("phone");
-                        String mobile = phone.getString("mobile");
-                        String home = phone.getString("home");
-                        String office = phone.getString("office");
-
-                        // tmp hash map for single contact
-                        HashMap<String, String> contact = new HashMap<>();
-
-                        // adding each child node to HashMap key => value
-                        contact.put("id", id);
-                        contact.put("name", name);
-                        contact.put("email", email);
-                        contact.put("mobile", mobile);
-
-                        // adding contact to contact list
-                        contactList.add(contact);
-                    }
-                } catch (final JSONException e) {
-                    Log.e(TAG, "Json parsing error: " + e.getMessage());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getApplicationContext(),
-                                    "Json parsing error: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    });
 
                 }
-
-            } else {
-                Log.e(TAG, "Couldn't get json from server.");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(),
-                                "Couldn't get json from server. Check LogCat for possible errors!",
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
+            } catch (ClientProtocolException e) {
+                //TODO Handle problems..
+            } catch (IOException e) {
+                //TODO Handle problems..
             }
-
-            return null;
+            return responseString;
         }
 
         @Override
-        protected void onPostExecute(Void result) {
+        protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            ListAdapter adapter = new SimpleAdapter(MainActivity.this, contactList,
-                    R.layout.list_item, new String[]{"email", "mobile"},
-                    new int[]{R.id.email, R.id.mobile});
-            lv.setAdapter(adapter);
 
-            Log.w("my app", "buraya geldin mi");
+            if (result.equals("200"))
+                Toast.makeText(MainActivity.this, "Kayıt yollandı.", Toast.LENGTH_LONG).show();
+            else
+                Toast.makeText(MainActivity.this, "Hata oluştu.", Toast.LENGTH_LONG).show();
         }
     }
 }

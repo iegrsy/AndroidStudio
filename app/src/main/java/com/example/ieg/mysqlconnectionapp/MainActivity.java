@@ -1,13 +1,11 @@
 package com.example.ieg.mysqlconnectionapp;
 
-import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,20 +15,10 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -102,11 +90,11 @@ public class MainActivity extends AppCompatActivity {
                 return "Web sayfası getirilemedi. Belki URL yanlıştır";
             }
         }
+
         // onPostExecute AsyncTask'tan dönen cevabı gösterir.
         @Override
         protected void onPostExecute(String result) {
-            Log.w("msg",result);
-            textView.setText(result);
+            Log.w("msg", result);
             jsonStr = result;
             new GetContacts().execute();
         }
@@ -118,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
     private String downloadUrl(String myurl) throws IOException {
         InputStream is = null;
         // Web sayfasından gelen verinin sadece 500 karakterini göstermek için
-        int len = 500;
+        int len = 6000;
 
         try {
             URL url = new URL(myurl);
@@ -143,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
     // InputStream'i okur ve String'e çevirir
     public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
         Reader reader = null;
@@ -156,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            Toast.makeText(MainActivity.this,"Json Data is downloading",Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, "Json Data is downloading", Toast.LENGTH_LONG).show();
 
         }
 
@@ -231,11 +220,11 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
             ListAdapter adapter = new SimpleAdapter(MainActivity.this, contactList,
-                    R.layout.list_item, new String[]{ "email","mobile"},
+                    R.layout.list_item, new String[]{"email", "mobile"},
                     new int[]{R.id.email, R.id.mobile});
             lv.setAdapter(adapter);
 
-            Log.w("my app","buraya geldin mi");
+            Log.w("my app", "buraya geldin mi");
         }
     }
 }

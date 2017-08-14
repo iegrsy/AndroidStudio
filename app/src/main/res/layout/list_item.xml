@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 
-android:layout_width="fill_parent"
-android:layout_height="wrap_content"
-android:orientation="vertical"
-android:padding="@android:dimen/thumbnail_height">
-<TextView
-    android:id="@+id/email"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:paddingBottom="2dip"
-    android:textColor="@color/colorAccent" />
+    android:layout_height="50dp"
+    android:padding="@android:dimen/notification_large_icon_height"
+    tools:background="@color/colorAccent">
 
-<TextView
-    android:id="@+id/mobile"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:textColor="#5d5d5d"
-    android:textStyle="bold" />
+    <TextView
+        android:id="@+id/email"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="10dp"
+        android:textColor="@color/colorAccent" />
+
+    <TextView
+        android:id="@+id/mobile"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#5d5d5d"
+        android:textStyle="bold" />
 </LinearLayout>
